@@ -12,7 +12,7 @@ dependencies = []
 
 [dependency-groups]
 dev = [
-    "mypy>=1.13,<2",
+    "mypy>=1.13,<3",
     "pip-audit>=2.7,<3",
     "pre-commit>=3.7,<5",
     "pytest>=8,<10",
