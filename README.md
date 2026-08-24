@@ -14,6 +14,13 @@ combined or per-sender results to `output/`.
 uv sync
 ```
 
+## Dependency sources of truth
+
+`pyproject.toml` is authoritative for project metadata and dependency
+constraints. `uv.lock` is authoritative for reproducible dependency
+resolution. Use `uv sync --locked` to create or update the development
+environment. `requirements.txt` is intentionally not maintained.
+
 ## Usage
 
 ```bash

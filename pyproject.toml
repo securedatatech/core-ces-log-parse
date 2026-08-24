@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "core-ces-log-parse"
 version = "0.1.0"
-description = "Extract Cisco ESA mail log threads by sender and MID."
+description = "Extract Cisco ESA mail log threads by sender email address and message ID (MID)."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
