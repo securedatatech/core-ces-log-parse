@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+.Python
+*.egg-info/
+
+# macOS
+.DS_Store
+._*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Build and packaging
+build/
+dist/
+.eggs/
+pip-wheel-metadata/
+
+# Caches and coverage
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# Generated and project output
+generated/
+output/
+outputs/
+artifacts/
+input/
+inputs/

@@ -1,0 +1,28 @@
+minimum_pre_commit_version: "3.7.0"
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: Ruff format
+        entry: uv run ruff format --check
+        language: system
+        types: [python]
+      - id: ruff-check
+        name: Ruff lint
+        entry: uv run ruff check
+        language: system
+        types: [python]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        types: [python, yaml, toml]
+      - id: end-of-file-fixer
+        types: [python, yaml, toml]
+      - id: check-yaml
+        types: [yaml]
+      - id: check-added-large-files
+        args: [--maxkb=102400]
+      - id: detect-private-key

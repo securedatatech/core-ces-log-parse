@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Python
+        run: uv python install ${{ matrix.python-version }}
+      - name: Sync locked environment
+        run: uv sync --locked --python ${{ matrix.python-version }}
+      - name: Run tests with coverage
+        run: >-
+          uv run --python ${{ matrix.python-version }} pytest
+          --cov=core_ces_log_parse
+          --cov-report=term-missing
+          --cov-fail-under=80
+
+  quality:
+    name: Quality checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Python
+        run: uv python install 3.14
+      - name: Sync locked environment
+        run: uv sync --locked --python 3.14
+      - name: Check formatting
+        run: uv run --python 3.14 ruff format --check .
+      - name: Run Ruff
+        run: uv run --python 3.14 ruff check .
+      - name: Run mypy
+        run: uv run --python 3.14 mypy src
+      - name: Run pre-commit
+        run: uv run --python 3.14 pre-commit run --all-files
+
+  security:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Python
+        run: uv python install 3.14
+      - name: Sync locked environment
+        run: uv sync --locked --python 3.14
+      - name: Audit dependencies
+        run: uv run --python 3.14 pip-audit
+
+  package:
+    name: Build and smoke-test wheel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Python
+        run: uv python install 3.14
+      - name: Sync locked environment
+        run: uv sync --locked --python 3.14
+      - name: Build wheel
+        run: uv build --out-dir "$RUNNER_TEMP/dist"
+      - name: Create wheel environment
+        run: uv venv --python 3.14 "$RUNNER_TEMP/wheel-venv"
+      - name: Install wheel
+        run: >-
+          uv pip install
+          --python "$RUNNER_TEMP/wheel-venv/bin/python"
+          --no-deps
+          "$RUNNER_TEMP/dist/"*.whl
+      - name: Verify installed CLI
+        run: >-
+          "$RUNNER_TEMP/wheel-venv/bin/python"
+          -m core_ces_log_parse.main --help
+      - name: Run installed sample smoke test
+        run: >-
+          "$RUNNER_TEMP/wheel-venv/bin/python"
+          -m core_ces_log_parse.main
+          --logs tests/fixtures/sample.log
+          --senders tests/fixtures/senders.txt
+          --out "$RUNNER_TEMP/sample-output.txt"

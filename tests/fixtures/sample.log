@@ -1,0 +1,5 @@
+Feb 04 10:00:00 mail postfix/qmgr[1111]: 1234: from=<noreply@salesforce.com>, size=123, nrcpt=1 (queue active) MID=1001
+Feb 04 10:00:01 mail postfix/smtp[1112]: 1234: to=<user@example.com>, relay=mx.example.com, delay=1.2, status=sent (250 2.0.0) MID=1001
+Feb 04 10:01:00 mail postfix/qmgr[1113]: 5678: from=<alerts@mail.salesforce.com>, size=456, nrcpt=1 (queue active) mid=2002
+Feb 04 10:01:01 mail postfix/smtp[1114]: 5678: to=<user@example.com>, relay=mx.example.com, delay=1.0, status=sent (250 2.0.0) mid=2002
+Feb 04 10:02:00 mail postfix/qmgr[1115]: 9999: from=<other@company.com>, size=789, nrcpt=1 (queue active) MID=3003
