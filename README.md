@@ -11,7 +11,7 @@ combined or per-sender results to `output/`.
 ## Install
 
 ```bash
-uv sync
+uv sync --locked
 ```
 
 ## Dependency sources of truth
