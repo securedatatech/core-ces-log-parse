@@ -7,6 +7,9 @@ contract. Use these linked documents for the specialized guidance it names:
 - [Triage labels](triage-labels.md): repository label vocabulary.
 - [Domain guidance](domain.md): how to consume the context glossary and ADRs.
 - [Domain glossary](../../CONTEXT.md): Cisco ESA mail-log terminology.
+- [CI policy](../../README.md#pr-smoke-validation): fixed smoke selection and
+  the manual full checkpoint. Continue running every local check required by
+  `AGENTS.md`; a green smoke job is not comprehensive validation.
 
 This index routes to existing guidance; it does not copy the commands or
 terms maintained by those canonical sources.

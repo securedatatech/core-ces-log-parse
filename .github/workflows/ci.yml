@@ -1,129 +1,64 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
   pull_request:
-    branches:
-      - main
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
-      - ".github/ISSUE_TEMPLATE/**"
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    name: Test (Python ${{ matrix.python-version }})
+  validate:
+    name: validate
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+    timeout-minutes: 5
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Route the complete PR and validate prose
+        id: scope
+        env:
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 -B .github/scripts/ci_scope.py
+      - name: Require explicit routing outputs
+        env:
+          SMOKE: ${{ steps.scope.outputs.smoke }}
+          INPUTS: ${{ steps.scope.outputs.inputs }}
+        run: |
+          case "$SMOKE/$INPUTS" in
+            true/false|false/false) ;;
+            *) echo "Invalid or missing routing result" >&2; exit 1 ;;
+          esac
+      - name: Check CI safeguards
+        run: python3 -B .github/scripts/ci_safeguards.py
       - name: Install uv
+        if: steps.scope.outputs.smoke == 'true'
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           enable-cache: true
           prune-cache: false
       - name: Install Python
-        run: uv python install ${{ matrix.python-version }}
-      - name: Sync locked environment
-        run: uv sync --locked --python ${{ matrix.python-version }}
-      - name: Run tests with coverage
-        run: >-
-          uv run --python ${{ matrix.python-version }} pytest
-          --cov=core_ces_log_parse
-          --cov-report=term-missing
-          --cov-fail-under=80
-
-  quality:
-    name: Quality checks
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
-        with:
-          enable-cache: true
-          prune-cache: false
-      - name: Install Python
+        if: steps.scope.outputs.smoke == 'true'
         run: uv python install 3.14
       - name: Sync locked environment
+        if: steps.scope.outputs.smoke == 'true'
         run: uv sync --locked --python 3.14
-      - name: Check formatting
-        run: uv run --python 3.14 ruff format --check .
-      - name: Run Ruff
-        run: uv run --python 3.14 ruff check .
-      - name: Run mypy
-        run: uv run --python 3.14 mypy src
-      - name: Run pre-commit
-        run: uv run --python 3.14 pre-commit run --all-files
-
-  security:
-    name: Dependency audit
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
-        with:
-          enable-cache: true
-          prune-cache: false
-      - name: Install Python
-        run: uv python install 3.14
-      - name: Sync locked environment
-        run: uv sync --locked --python 3.14
-      - name: Audit dependencies
-        run: uv run --python 3.14 pip-audit
-
-  package:
-    name: Build and smoke-test wheel
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
-        with:
-          enable-cache: true
-          prune-cache: false
-      - name: Install Python
-        run: uv python install 3.14
-      - name: Sync locked environment
-        run: uv sync --locked --python 3.14
-      - name: Build wheel
-        run: uv build --out-dir "$RUNNER_TEMP/dist"
-      - name: Create wheel environment
-        run: uv venv --python 3.14 "$RUNNER_TEMP/wheel-venv"
-      - name: Install wheel
-        run: >-
-          uv pip install
-          --python "$RUNNER_TEMP/wheel-venv/bin/python"
-          --no-deps
-          "$RUNNER_TEMP/dist/"*.whl
-      - name: Verify installed CLI
-        run: >-
-          "$RUNNER_TEMP/wheel-venv/bin/python"
-          -m core_ces_log_parse.main --help
-      - name: Run installed sample smoke test
-        run: >-
-          "$RUNNER_TEMP/wheel-venv/bin/python"
-          -m core_ces_log_parse.main
-          --logs tests/fixtures/sample.log
-          --senders tests/fixtures/senders.txt
-          --out "$RUNNER_TEMP/sample-output.txt"
+      - name: Check formatting, lint, and syntax
+        if: steps.scope.outputs.smoke == 'true'
+        run: |
+          uv run --locked --python 3.14 ruff format --check .
+          uv run --locked --python 3.14 ruff check .
+          uv run --locked --python 3.14 python -m compileall -q src tests .github/scripts .github/tests
+      - name: Run fixed smoke checks without coverage
+        if: steps.scope.outputs.smoke == 'true'
+        run: uv run --locked --python 3.14 python .github/scripts/ci_smoke.py
