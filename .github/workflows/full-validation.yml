@@ -9,7 +9,7 @@ permissions:
 jobs:
   test:
     name: Full tests (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     strategy:
       fail-fast: false
@@ -36,7 +36,7 @@ jobs:
 
   quality:
     name: Full quality checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - name: Check out repository
@@ -65,7 +65,7 @@ jobs:
 
   security:
     name: Full dependency audit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - name: Check out repository
@@ -84,7 +84,7 @@ jobs:
 
   package:
     name: Full wheel verification
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - name: Check out repository
